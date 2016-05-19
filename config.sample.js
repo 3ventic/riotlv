@@ -4,5 +4,6 @@ module.exports = {
     client_id: '1782378161xxxxxxxx', // Client ID of the bot
     token: '', // Discord access token
     lvtoken: '', // Log viewer access token
-    lvdomain: '' // Log viewer domain
+    lvdomain: '', // Log viewer domain
+    lvpublicdomain: '' // Log viewer domain to give as a response to !lv
 };

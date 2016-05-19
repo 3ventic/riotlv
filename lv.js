@@ -110,7 +110,7 @@ var commands = {
                 else {
                     reply = "no data found.";
                 }
-				reply += '\nSee http://' + config.lvdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(user);
+				reply += '\nSee http://' + config.lvpublicdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(user);
             }
             sendReply(message, reply);
         });
