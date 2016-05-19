@@ -24,7 +24,7 @@ client.on('message', function (message) {
     // Make sure we're on allowed server
     if (message.channel.server.id === config.server_id) {
         let words = message.cleanContent.match(/(?:[^\s"]+|"[^"]*")+/g);
-        if (words[0].startsWith(config.prefix)) {
+        if (words && words[0].startsWith(config.prefix)) {
             let cmd = words[0].substring(config.prefix.length);
             if (commands[cmd]) {
                 words.shift();
