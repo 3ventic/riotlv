@@ -21,15 +21,12 @@ client.on('ready', function () {
 });
 
 client.on('message', function (message) {
-    // Make sure we're on allowed server
-    if (message.channel.server.id === config.server_id) {
-        let words = message.cleanContent.match(/(?:[^\s"]+|"[^"]*")+/g);
-        if (words && words[0].startsWith(config.prefix)) {
-            let cmd = words[0].substring(config.prefix.length);
-            if (commands[cmd]) {
-                words.shift();
-                commands[cmd](message, words);
-            }
+    let words = message.cleanContent.match(/(?:[^\s"]+|"[^"]*")+/g);
+    if (words && words[0].startsWith(config.prefix)) {
+        let cmd = words[0].substring(config.prefix.length);
+        if (commands[cmd]) {
+            words.shift();
+            commands[cmd](message, words);
         }
     }
 });
@@ -71,9 +68,10 @@ var commands = {
             sendReply(message, "usage: " + config.prefix + "lv <user> [channel] [limit]");
             return;
         }
-
+        var token = "";
+        if(message.channel.server) token = config.lvtokens[message.channel.server.id] || "";
         request('http://' + config.lvdomain + '/api/logs/'
-                + encodeURIComponent(channel) + "/?token=" + config.lvtoken
+                + encodeURIComponent(channel) + "/?token=" + token
                 + "&nick=" + encodeURIComponent(user) + "&before=" + limit,
         function (error, response, body) {
             let reply;
@@ -110,7 +108,7 @@ var commands = {
                 else {
                     reply = "no data found.";
                 }
-				reply += '\nSee http://' + config.lvpublicdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(user);
+                reply += '\nSee http://' + config.lvpublicdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(user);
             }
             sendReply(message, reply);
         });
@@ -118,6 +116,9 @@ var commands = {
     game: function (message, words) {
         let game = words.join(' ') || "with butts";
         client.setStatus('online', game);
+    },
+    invite: function(message, words) {
+        sendReply(message, invitelink);
     }
 };
 
