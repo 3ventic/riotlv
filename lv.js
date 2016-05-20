@@ -46,9 +46,54 @@ client.loginWithToken(config.token, function (error) {
     }
 });
 
+function getToken(message) {
+    return message.channel.server ? (config.lvtokens[message.channel.server.id] || "") : "";
+}
+
+function apiRequest(api, cb, errorcb) {
+    request('http://' + config.lvdomain + '/api/' + api, function (error, response, body) {
+        let data;
+        if (error) {
+            if (typeof errorcb === "function") errorcb("an error occurred with the API request");
+            console.error('RERROR', error);
+        }
+        else {
+            try {
+                data = JSON.parse(body);
+            } catch (e) {
+                data = null;
+                if (typeof errorcb === "function") errorcb("an error occurred parsing the API response");
+                console.error('PERROR', e);
+            }
+            if (data != null && typeof cb === "function") {
+                cb(data);
+            }
+            else if (typeof errorcb === "function") {
+                errorcb("no data returned");
+            }
+        }
+    });
+}
+
 var commands = {
     help: function (message, words) {
         sendReply(message, "command prefix: " + config.prefix + " - commands: " + Object.keys(commands).join(', '));
+    },
+    list: function (message, words) {
+        let token = getToken(message);
+        apiRequest('channels?token=' + token, function (data) {
+            let reply = "";
+            data.forEach(function (ch) {
+                if (reply.length > 1900) {
+                    sendReply(message, reply.slice(0, -2));
+                    reply = "";
+                }
+                reply += ch.name + ", ";
+            });
+            sendReply(message, reply.slice(0, -2));
+        }, function (error) {
+            sendReply(message, error);
+        });
     },
     lv: function (message, words) {
         let limit = words[2] || 10;
@@ -68,49 +113,35 @@ var commands = {
             sendReply(message, "usage: " + config.prefix + "lv <user> [channel] [limit]");
             return;
         }
-        var token = "";
-        if(message.channel.server) token = config.lvtokens[message.channel.server.id] || "";
-        request('http://' + config.lvdomain + '/api/logs/'
-                + encodeURIComponent(channel) + "/?token=" + token
+
+        let token = getToken(message);
+
+        apiRequest('logs/' + encodeURIComponent(channel) + "/?token=" + token
                 + "&nick=" + encodeURIComponent(user) + "&before=" + limit,
-        function (error, response, body) {
-            let reply;
-            let data;
-            if (error) {
-                reply = "an error occurred with the API request";
-                console.error('RERROR', error);
+        function (data) {
+            if (data.before) {
+                reply = "here are logs for **" + user + "** from **" + channel + "**\n\n```";
+                for (let i = data.before.length - 1; i >= 0; --i) {
+                    let index = data.before.length - 1 - i;
+                    let ircmsg = parseIrc(data.before[index].text);
+                    let line = "\n" + (new Date(data.before[index].time * 1000)).toISOString().replace('T', ' ').replace('Z', ' UTC')
+                        + " | " + ircmsg.params[1];
+                    if (reply.length + line.length > 1900) {
+                        reply += "\n```";
+                        sendReply(message, reply);
+                        reply = "\n```";
+                    }
+                    reply += line;
+                }
+                reply += "\n```";
             }
             else {
-                try {
-                    data = JSON.parse(body);
-                } catch (e) {
-                    data = null;
-                    reply = "an error occurred parsing the API response";
-                    console.error('PERROR', e);
-                }
-
-                if (data !== null && data.before) {
-                    reply = "here are logs for **" + user + "** from **" + channel + "**\n\n```";
-                    for (let i = data.before.length - 1; i >= 0; --i) {
-                        let index = data.before.length - 1 - i;
-                        let ircmsg = parseIrc(data.before[index].text);
-                        let line = "\n" + (new Date(data.before[index].time * 1000)).toISOString().replace('T', ' ').replace('Z', ' UTC')
-                            + " | " + ircmsg.params[1];
-                        if (reply.length + line.length > 1900) {
-                            reply += "\n```";
-                            sendReply(message, reply);
-                            reply = "\n```";
-                        }
-                        reply += line;
-                    }
-                    reply += "\n```";
-                }
-                else {
-                    reply = "no data found.";
-                }
-                reply += '\nSee http://' + config.lvpublicdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(user);
+                reply = "no data found.";
             }
+            reply += '\nSee http://' + config.lvpublicdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(user);
             sendReply(message, reply);
+        }, function (error) {
+            sendReply(message, error);
         });
     },
     game: function (message, words) {
