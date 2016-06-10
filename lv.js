@@ -1,3 +1,4 @@
+var fs = require('fs');
 var Discord = require('discord.js');
 var Request = require('request');
 var parseIrc = require('irc-message').parse;
@@ -10,6 +11,9 @@ var request = Request.defaults({
 
 const invitelink = 'https://discordapp.com/oauth2/authorize?client_id='
     + config.client_id + '&scope=bot&permissions=19456';
+const defaults_file = './defaults.json';
+
+var channel_defaults = {};
 
 var client = new Discord.Client({
     autoReconnect: true
@@ -95,9 +99,22 @@ var commands = {
             sendReply(message, error);
         });
     },
+    setdefault: function (message, words) {
+        if (message.channel.permissionsOf(message.author).hasPermission('manageChannel')) {
+            let default_channel = words[0] || null;
+            if (default_channel !== null) {
+                channel_defaults[message.channel.id] = default_channel.toLowerCase();
+                sendReply(message, "default for this channel set to " + channel_defaults[message.channel.id]);
+            } else {
+                sendReply(message, "usage: !setdefault [channel name]");
+            }
+        } else {
+            sendReply(message, "shush, you don't have permission to do this!");
+        }
+    },
     lv: function (message, words) {
         let limit = words[2] || 10;
-        let channel = words[1] || "riotgames";
+        let channel = words[1] || channel_defaults[message.channel.id] || "riotgames";
         let user = words[0] || null;
 
         try {
@@ -162,6 +179,50 @@ function sendReply(message, reply) {
 }
 
 process.on('SIGINT', function () {
-    console.log("Logging out");
-    client.logout(function () { process.exit(); });
+    var exit_tasks_done = 0;
+    var exit_tasks_total = 2;
+    function exitTaskCheck() {
+        if (++exit_tasks_done >= exit_tasks_total) {
+            process.exit();   
+        }
+    }
+    console.log("Logging out and saving data...");
+    client.logout(exitTaskCheck);
+    saveDefaults(exitTaskCheck);
+});
+
+function saveDefaults(cb) {
+    fs.access(defaults_file, fs.W_OK, (err) => {
+        if (err) {
+            console.error("No access to write", defaults_file);
+            cb();
+        } else {
+            fs.writeFile(defaults_file, JSON.stringify(channel_defaults), (err) => {
+                if (err) {
+                    console.error("Write error", defaults_file);
+                }
+                cb();
+            });
+        }
+    });
+}
+
+// Load defaults
+fs.access(defaults_file, fs.R_OK, (err) => {
+    if (err) {
+        console.error("No access", defaults_file);
+        saveDefaults(function () {});
+    } else {
+        fs.readFile(defaults_file, (err, data) => {
+            if (err) {
+                console.error("Read error", defaults_file, err);
+            } else {
+                try {
+                    channel_defaults = JSON.parse(data);
+                } catch (e) {
+                    console.error("JSON error", e);
+                }
+            }
+        });
+    }
 });
