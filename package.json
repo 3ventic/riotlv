@@ -9,7 +9,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "discord.js": "^7.0.1",
+    "@slack/client": "^3.4.0",
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
     "irc-message": "^3.0.2",
     "request": "^2.72.0"
   }
