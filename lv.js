@@ -141,7 +141,7 @@ var commands = {
                 for (let i = data.before.length - 1; i >= 0; --i) {
                     let index = data.before.length - 1 - i;
                     let ircmsg = parseIrc(data.before[index].text);
-                    let line = "\n" + (new Date(data.before[index].time * 1000)).toISOString().replace('T', ' ').replace('Z', ' UTC')
+                    let line = "\n" + (new Date(data.before[index].time * 1000)).toISOString().replace('T', ' ').replace('.000', '').replace('Z', ' UTC')
                         + " | " + ircmsg.params[1];
                     if (reply.length + line.length > 1900) {
                         reply += "\n```";
