@@ -138,6 +138,7 @@ var commands = {
         apiRequest('logs/' + encodeURIComponent(channel) + "/?token=" + token
                 + "&nick=" + encodeURIComponent(user) + "&before=" + limit,
         function (data) {
+			let reply = "";
             if (data.before) {
                 reply = "here are logs for **" + user + "** from **" + channel + "**\n\n```";
                 for (let i = data.before.length - 1; i >= 0; --i) {
