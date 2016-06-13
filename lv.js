@@ -195,37 +195,27 @@ process.on('SIGINT', function () {
 });
 
 function saveDefaults(cb) {
-    fs.access(defaults_file, fs.W_OK, (err) => {
-        if (err) {
-            console.error("No access to write", defaults_file);
-            cb();
-        } else {
-            fs.writeFile(defaults_file, JSON.stringify(channel_defaults), (err) => {
-                if (err) {
-                    console.error("Write error", defaults_file);
-                }
-                cb();
-            });
-        }
-    });
+	fs.writeFile(defaults_file, JSON.stringify(channel_defaults), (err) => {
+		if (err) {
+			console.error("Write error", defaults_file);
+		}
+		cb();
+	});
 }
 
 // Load defaults
-fs.access(defaults_file, fs.R_OK, (err) => {
-    if (err) {
-        console.error("No access", defaults_file);
-        saveDefaults(function () {});
-    } else {
-        fs.readFile(defaults_file, (err, data) => {
-            if (err) {
-                console.error("Read error", defaults_file, err);
-            } else {
-                try {
-                    channel_defaults = JSON.parse(data);
-                } catch (e) {
-                    console.error("JSON error", e);
-                }
-            }
-        });
-    }
+fs.readFile(defaults_file, (err, data) => {
+	if (err) {
+		if(err.code == "ENOENT") {
+			console.log("No defaults file found.")
+		} else {
+			console.error("Read error", defaults_file, err);
+		}
+	} else {
+		try {
+			channel_defaults = JSON.parse(data);
+		} catch (e) {
+			console.error("JSON error", e);
+		}
+	}
 });
