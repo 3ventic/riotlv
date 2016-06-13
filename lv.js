@@ -1,3 +1,5 @@
+"use strict";
+
 var fs = require('fs');
 var Discord = require('discord.js');
 var Request = require('request');
