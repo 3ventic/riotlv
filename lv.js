@@ -64,13 +64,14 @@ function apiRequest(api, cb, errorcb) {
             console.error('RERROR', error);
         }
         else {
-            try {
-                data = JSON.parse(body);
-            } catch (e) {
-                data = null;
-                if (typeof errorcb === "function") errorcb("an error occurred parsing the API response");
-                console.error('PERROR', e);
-            }
+			try {
+				data = JSON.parse(body);
+			} catch (e) {
+				data = null;
+				if (typeof errorcb === "function") errorcb("an error occurred parsing the API response");
+				console.error('PERROR', e);
+				return;
+			}
             if (data != null && typeof cb === "function") {
                 cb(data);
             }
@@ -79,6 +80,67 @@ function apiRequest(api, cb, errorcb) {
             }
         }
     });
+}
+
+var formatTimespan = function(timespan) {
+	var age = Math.round(timespan);
+	var periods = [
+		{abbr:"y", len: 3600*24*365},
+		{abbr:"m", len: 3600*24*30},
+		{abbr:"d", len: 3600*24},
+		{abbr:" hrs", len: 3600},
+		{abbr:" min", len: 60},
+		{abbr:" sec", len: 1},
+	];
+	var res = "";
+	var count = 0;
+	for(var i=0;i<periods.length;++i) {
+		if(age >= periods[i].len) {
+			var pval = Math.floor(age / periods[i].len);
+			age = age % periods[i].len;
+			res += (res?" ":"")+pval+periods[i].abbr;
+			count ++;
+			if(count >= 2) break;
+		}
+	}
+	return res;
+}
+
+function sendLogs(replyto, channel, logs, comments) {
+	var now = Math.floor(Date.now()/1000);
+	var reply = "here are logs for **" + logs.user.nick + "** from **" + channel + " ("+logs.user.messages+" messages, "+logs.user.timeouts+" timeouts)**\n\n```";
+	// reverse iteration for pretty pagination
+	for (let i = logs.before.length - 1; i >= 0; --i) {
+		let index = logs.before.length - 1 - i;
+		let message = logs.before[index];
+		let ircmsg = parseIrc(message.text);
+		let line = "\n[" + formatTimespan(now - message.time) + " ago] " + message.nick + ": " + ircmsg.params[1];
+		if (reply.length + line.length > 1900) {
+			reply += "\n```";
+			sendReply(replyto, reply);
+			reply = "\n```";
+		}
+		reply += line;
+	}
+	reply += "\n```";
+	if (reply.length > 1900) {
+		sendReply(replyto, reply);
+		reply = ""
+	}
+	for (let i = 0; i < comments.length; ++i) {
+		let comment = comments[i];
+		let line =  "Comment by "+comment.author+" (";
+		if(comment.added == comment.edited) line += "added";
+		else line += "edited";
+		line += " " + formatTimespan(now - comment.edited) + " ago)";
+		line += "```"+comment.text+"```";
+		if (reply.length + line.length > 1900) {
+			sendReply(replyto, reply);
+			reply = "";
+		}
+		reply += line;
+	}
+	if(reply) sendReply(replyto, reply);
 }
 
 var commands = {
@@ -137,29 +199,16 @@ var commands = {
 
         apiRequest('logs/' + encodeURIComponent(channel) + "/?token=" + token
                 + "&nick=" + encodeURIComponent(user) + "&before=" + limit,
-        function (data) {
-			let reply = "";
-            if (data.before) {
-                reply = "here are logs for **" + user + "** from **" + channel + "**\n\n```";
-                for (let i = data.before.length - 1; i >= 0; --i) {
-                    let index = data.before.length - 1 - i;
-                    let ircmsg = parseIrc(data.before[index].text);
-                    let line = "\n" + (new Date(data.before[index].time * 1000)).toISOString().replace('T', ' ').replace('.000', '').replace('Z', ' UTC')
-                        + " | " + ircmsg.params[1];
-                    if (reply.length + line.length > 1900) {
-                        reply += "\n```";
-                        sendReply(message, reply);
-                        reply = "\n```";
-                    }
-                    reply += line;
-                }
-                reply += "\n```";
-            }
-            else {
-                reply = "no data found.";
-            }
-            reply += '\nSee http://' + config.lvpublicdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(user);
-            sendReply(message, reply);
+        function (logs) {
+			apiRequest('comments/' + encodeURIComponent(channel) + "/?token=" + token
+                + "&topic=" + encodeURIComponent(user), 
+			function(comments) {
+				console.log("Comments successful")
+				sendLogs(message, channel, logs, comments);
+			}, function(error) {
+				console.log("Comments unsuccessful")
+				sendLogs(message, channel, logs, []);
+			});
         }, function (error) {
             sendReply(message, error);
         });
