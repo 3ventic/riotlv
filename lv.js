@@ -140,6 +140,7 @@ function sendLogs(replyto, channel, logs, comments) {
 		}
 		reply += line;
 	}
+	reply += '\nSee http://' + config.lvpublicdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(logs.user.nick);
 	if(reply) sendReply(replyto, reply);
 }
 
