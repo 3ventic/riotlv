@@ -62,8 +62,10 @@ function apiRequest(api, cb, errorcb) {
         if (error) {
             if (typeof errorcb === "function") errorcb("an error occurred with the API request");
             console.error('RERROR', error);
-        }
-        else {
+        } else if(response.statusCode !== 200) {
+			if (typeof errorcb === "function") errorcb("an error occurred with the API request");
+            console.error('RERROR', response);
+		} else {
 			try {
 				data = JSON.parse(body);
 			} catch (e) {
@@ -201,6 +203,10 @@ var commands = {
         apiRequest('logs/' + encodeURIComponent(channel) + "/?token=" + token
                 + "&nick=" + encodeURIComponent(user) + "&before=" + limit,
         function (logs) {
+			if(logs.error) {
+				sendReply(message, logs.error);
+				return;
+			}
 			apiRequest('comments/' + encodeURIComponent(channel) + "/?token=" + token
                 + "&topic=" + encodeURIComponent(user), 
 			function(comments) {
