@@ -61,10 +61,10 @@ function apiRequest(api, cb, errorcb) {
         let data;
         if (error) {
             if (typeof errorcb === "function") errorcb("an error occurred with the API request");
-            console.error('RERROR', error);
+            console.error('RERROR', api, error);
         } else if(response.statusCode !== 200) {
 			if (typeof errorcb === "function") errorcb("an error occurred with the API request");
-            console.error('RERROR', response);
+            console.error('RERROR', api, response.statusCode);
 		} else {
 			try {
 				data = JSON.parse(body);
