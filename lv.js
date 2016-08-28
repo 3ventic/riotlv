@@ -180,20 +180,20 @@ var commands = {
         }
     },
     lv: function (message, words) {
-        let limit = words[2] || 10;
-        let channel = words[1] || channel_defaults[message.channel.id] || "riotgames";
         let user = words[0] || null;
-
-        try {
-            limit = Math.min(parseInt(limit), 50);
-        } catch (e) {
-            sendReply(message, "limit must be a number");
-            return;
-        }
+        let channel = channel_defaults[message.channel.id];
+        let limit = 10;
+		if(isNaN(words[1])) {
+			channel = words[1]
+			limit = Math.floor(Math.min(parseInt(words[2]), 50)) || 10;
+		} else {
+			limit = Math.floor(Math.min(parseInt(words[1]), 50)) || 10;
+			if(words[2]) channel = words[2];
+		}
 
         console.log("Log request for: `" + JSON.stringify({ user: words[0], channel: channel, limit: limit }) + "`");
 
-        if (user === null) {
+        if (!user || !channel) {
             sendReply(message, "usage: " + config.prefix + "lv <user> [channel] [limit]");
             return;
         }
