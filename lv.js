@@ -183,12 +183,14 @@ var commands = {
         let user = words[0] || null;
         let channel = channel_defaults[message.channel.id];
         let limit = 10;
-		if(isNaN(words[1])) {
-			channel = words[1]
-			limit = Math.floor(Math.min(parseInt(words[2]), 50)) || 10;
-		} else {
-			limit = Math.floor(Math.min(parseInt(words[1]), 50)) || 10;
-			if(words[2]) channel = words[2];
+		if(words.length > 1) {
+			if(isNaN(words[1])) {
+				channel = words[1]
+				limit = Math.floor(Math.min(parseInt(words[2]), 50)) || 10;
+			} else {
+				limit = Math.floor(Math.min(parseInt(words[1]), 50)) || 10;
+				if(words[2]) channel = words[2];
+			}
 		}
 
         console.log("Log request for: `" + JSON.stringify({ user: words[0], channel: channel, limit: limit }) + "`");
