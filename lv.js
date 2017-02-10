@@ -152,22 +152,6 @@ var commands = {
     help: function (message, words) {
         sendReply(message, "command prefix: " + config.prefix + " - commands: " + Object.keys(commands).join(', '));
     },
-    list: function (message, words) {
-        let token = getToken(message);
-        apiRequest('channels?token=' + token, function (data) {
-            let reply = "";
-            data.forEach(function (ch) {
-                if (reply.length > 1900) {
-                    sendReply(message, reply.slice(0, -2));
-                    reply = "";
-                }
-                reply += ch.name + ", ";
-            });
-            sendReply(message, reply.slice(0, -2));
-        }, function (error) {
-            sendReply(message, error);
-        });
-    },
     setdefault: function (message, words) {
         if (message.channel.permissionsOf(message.author).hasPermission('manageChannel')) {
             let default_channel = words[0] || null;
