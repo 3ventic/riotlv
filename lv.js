@@ -130,8 +130,8 @@ function sendLogs(replyto, channel, logs) {
 		reply = ""
 	}
 	if(logs.comments) {
-		for (let i = 0; i < comments.length; ++i) {
-			let comment = comments[i];
+		for (let i = 0; i < logs.comments.length; ++i) {
+			let comment = logs.comments[i];
 			let line =  "Comment by "+comment.author+" (";
 			if(comment.added == comment.edited) line += "added";
 			else line += "edited";
