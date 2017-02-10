@@ -108,9 +108,9 @@ var formatTimespan = function(timespan) {
 	return res;
 }
 
-function sendLogs(replyto, channel, logs, comments) {
+function sendLogs(replyto, channel, logs) {
 	var now = Math.floor(Date.now()/1000);
-	var reply = "here are logs for **" + logs.user.nick + "** from **" + channel + " ("+logs.user.messages+" messages, "+logs.user.timeouts+" timeouts)**\n\n```";
+	var reply = "here are logs for **" + logs.user.nick + "** from **" + channel + " ("+logs.user.messages+" messages, "+logs.user.timeouts+" timeouts, "+logs.user.bans+" bans)**\n\n```";
 	// reverse iteration for pretty pagination
 	for (let i = logs.before.length - 1; i >= 0; --i) {
 		let index = logs.before.length - 1 - i;
@@ -129,18 +129,20 @@ function sendLogs(replyto, channel, logs, comments) {
 		sendReply(replyto, reply);
 		reply = ""
 	}
-	for (let i = 0; i < comments.length; ++i) {
-		let comment = comments[i];
-		let line =  "Comment by "+comment.author+" (";
-		if(comment.added == comment.edited) line += "added";
-		else line += "edited";
-		line += " " + formatTimespan(now - comment.edited) + " ago)";
-		line += "```"+comment.text+"```";
-		if (reply.length + line.length > 1900) {
-			sendReply(replyto, reply);
-			reply = "";
+	if(logs.comments) {
+		for (let i = 0; i < comments.length; ++i) {
+			let comment = comments[i];
+			let line =  "Comment by "+comment.author+" (";
+			if(comment.added == comment.edited) line += "added";
+			else line += "edited";
+			line += " " + formatTimespan(now - comment.edited) + " ago)";
+			line += "```"+comment.text+"```";
+			if (reply.length + line.length > 1900) {
+				sendReply(replyto, reply);
+				reply = "";
+			}
+			reply += line;
 		}
-		reply += line;
 	}
 	reply += '\nSee http://' + config.lvpublicdomain + '/' + encodeURIComponent(channel) + "/?user=" + encodeURIComponent(logs.user.nick);
 	if(reply) sendReply(replyto, reply);
@@ -195,10 +197,16 @@ var commands = {
 
         console.log("Log request for: `" + JSON.stringify({ user: words[0], channel: channel, limit: limit }) + "`");
 
-        if (!user || !channel) {
+        if (!user) {
             sendReply(message, "usage: " + config.prefix + "lv <user> [channel] [limit]");
             return;
-        }
+		} else if(!channel) {
+            sendReply(message, "usage: " + config.prefix + "lv <user> [channel] [limit] - or use !setdefault <channel> to set a default channel");
+            return;
+        } else if(!/^[a-zA-Z0-9]\w+$/.test(user)) {
+            sendReply(message, "Invalid user name!");
+            return;
+		}
 
         let token = getToken(message);
 
@@ -209,15 +217,7 @@ var commands = {
 				sendReply(message, logs.error);
 				return;
 			}
-			apiRequest('comments/' + encodeURIComponent(channel) + "/?token=" + token
-                + "&topic=" + encodeURIComponent(user), 
-			function(comments) {
-				console.log("Comments successful")
-				sendLogs(message, channel, logs, comments);
-			}, function(error) {
-				console.log("Comments unsuccessful")
-				sendLogs(message, channel, logs, []);
-			});
+			sendLogs(message, channel, logs);
         }, function (error) {
             sendReply(message, error);
         });
