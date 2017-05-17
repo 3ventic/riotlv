@@ -23,7 +23,7 @@ var client = new Discord.Client({
 
 client.on('ready', function () {
     console.log("Ready");
-    client.setStatus('online', 'with butts');
+    client.user.setGame('deny the unbans');
 });
 
 client.on('message', function (message) {
@@ -45,7 +45,7 @@ client.on('error', function (error) {
     console.error('ERROR', error);
 });
 
-client.loginWithToken(config.token, function (error) {
+client.login(config.token, function (error) {
     if (error) {
         console.error("Couldn't login: ", error);
         process.exit(15);
@@ -153,7 +153,7 @@ var commands = {
         sendReply(message, "command prefix: " + config.prefix + " - commands: " + Object.keys(commands).join(', '));
     },
     setdefault: function (message, words) {
-        if (message.channel.permissionsOf(message.author).hasPermission('manageChannel')) {
+        if (message.channel.permissionsFor(message.author).has(Discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
             let default_channel = words[0] || null;
             if (default_channel !== null) {
                 channel_defaults[message.channel.id] = default_channel.toLowerCase();
@@ -208,7 +208,7 @@ var commands = {
     },
     game: function (message, words) {
         let game = words.join(' ') || "with butts";
-        client.setStatus('online', game);
+        client.user.setGame(game);
     },
     invite: function(message, words) {
         sendReply(message, invitelink);
@@ -216,7 +216,7 @@ var commands = {
 };
 
 function sendReply(message, reply) {
-    client.reply(message, reply, { tts: false }, function (error) {
+    message.reply(reply, { tts: false }, function (error) {
         if (error) {
             console.error('WERROR', error);
         }
@@ -232,7 +232,7 @@ process.on('SIGINT', function () {
         }
     }
     console.log("Logging out and saving data...");
-    client.logout(exitTaskCheck);
+    client.destroy().then(exitTaskCheck);
     saveDefaults(exitTaskCheck);
 });
 
