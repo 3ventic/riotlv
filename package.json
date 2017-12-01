@@ -1,15 +1,19 @@
 {
   "name": "riotlv",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
   "main": "lv.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 0"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
+<<<<<<< HEAD
     "discord.js": "^11.1.0",
+=======
+    "discord.js": "^11.0.0",
+>>>>>>> 89b6c9a38c5f3d1a4a5070155183b42ae317b4a6
     "irc-message": "^3.0.2",
     "request": "^2.72.0"
   }

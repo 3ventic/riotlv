@@ -25,8 +25,13 @@ var client = new Discord.Client({
 });
 
 client.on('ready', function () {
+<<<<<<< HEAD
 	console.log("Ready");
 	client.setStatus('online', 'with butts');
+=======
+    console.log("Ready");
+    client.user.setGame('deny the unbans');
+>>>>>>> 89b6c9a38c5f3d1a4a5070155183b42ae317b4a6
 });
 
 client.on('message', function (message) {
@@ -48,11 +53,19 @@ client.on('error', function (error) {
 	console.error('ERROR', error);
 });
 
+<<<<<<< HEAD
 client.loginWithToken(config.token, function (error) {
 	if (error) {
 		console.error("Couldn't login: ", error);
 		process.exit(15);
 	}
+=======
+client.login(config.token, function (error) {
+    if (error) {
+        console.error("Couldn't login: ", error);
+        process.exit(15);
+    }
+>>>>>>> 89b6c9a38c5f3d1a4a5070155183b42ae317b4a6
 });
 
 function getToken(message) {
@@ -152,6 +165,7 @@ function sendLogs(replyto, channel, logs) {
 }
 
 var commands = {
+<<<<<<< HEAD
 	help: function (message, words) {
 		sendReply(message, "command prefix: " + config.prefix + " - commands: " + Object.keys(commands).join(', '));
 	},
@@ -174,6 +188,30 @@ var commands = {
 		let limit = 10;
 		if (words.length > 1) {
 			if (isNaN(words[1])) {
+=======
+    help: function (message, words) {
+        sendReply(message, "command prefix: " + config.prefix + " - commands: " + Object.keys(commands).join(', '));
+    },
+    setdefault: function (message, words) {
+        if (message.channel.permissionsFor(message.author).has(Discord.Permissions.FLAGS.MANAGE_CHANNELS)) {
+            let default_channel = words[0] || null;
+            if (default_channel !== null) {
+                channel_defaults[message.channel.id] = default_channel.toLowerCase();
+                sendReply(message, "default for this channel set to " + channel_defaults[message.channel.id]);
+            } else {
+                sendReply(message, "usage: !setdefault [channel name]");
+            }
+        } else {
+            sendReply(message, "shush, you don't have permission to do this!");
+        }
+    },
+    lv: function (message, words) {
+        let user = words[0] || null;
+        let channel = channel_defaults[message.channel.id];
+        let limit = 10;
+		if(words.length > 1) {
+			if(isNaN(words[1])) {
+>>>>>>> 89b6c9a38c5f3d1a4a5070155183b42ae317b4a6
 				channel = words[1]
 				limit = Math.floor(Math.min(parseInt(words[2]), 50)) || 10;
 			} else {
@@ -237,6 +275,7 @@ var commands = {
 			} else {
 				sendReply(message, "Missing logviewer admin token!")
 			}
+<<<<<<< HEAD
 		} else {
 			sendReply(message, "shush, you don't have permission to do this!");
 		}
@@ -262,6 +301,41 @@ process.on('SIGINT', function () {
 	console.log("Logging out and saving data...");
 	client.logout(exitTaskCheck);
 	saveDefaults(exitTaskCheck);
+=======
+			sendLogs(message, channel, logs);
+        }, function (error) {
+            sendReply(message, error);
+        });
+    },
+    game: function (message, words) {
+        let game = words.join(' ') || "with butts";
+        client.user.setGame(game);
+    },
+    invite: function(message, words) {
+        sendReply(message, invitelink);
+    }
+};
+
+function sendReply(message, reply) {
+    message.reply(reply, { tts: false }, function (error) {
+        if (error) {
+            console.error('WERROR', error);
+        }
+    });
+}
+
+process.on('SIGINT', function () {
+    var exit_tasks_done = 0;
+    var exit_tasks_total = 2;
+    function exitTaskCheck() {
+        if (++exit_tasks_done >= exit_tasks_total) {
+            process.exit();   
+        }
+    }
+    console.log("Logging out and saving data...");
+    client.destroy().then(exitTaskCheck);
+    saveDefaults(exitTaskCheck);
+>>>>>>> 89b6c9a38c5f3d1a4a5070155183b42ae317b4a6
 });
 
 function saveDefaults(cb) {
