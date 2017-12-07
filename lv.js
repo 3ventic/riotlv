@@ -31,6 +31,7 @@ client.on('ready', function () {
 });
 
 client.on('message', function (message) {
+    console.log("got message", message.toString(), message.cleanContent)
     let words = message.cleanContent.match(/(?:[^\s"]+|"[^"]*")+/g);
     if (words && words[0].startsWith(config.prefix)) {
         let cmd = words[0].substring(config.prefix.length);
@@ -116,7 +117,7 @@ var formatTimespan = function (timespan) {
 
 function sendLogs(replyto, channel, logs) {
     var now = Math.floor(Date.now() / 1000);
-    var reply = "here are logs for **" + logs.user.nick + "** from **" + channel + " (" + logs.user.messages + " messages, " + logs.user.timeouts + " timeouts, " + logs.user.bans + " bans)**\n\n```";
+    var reply = "here are logs for **" + logs.user.nick + "** from **" + channel + " (" + logs.user.messages + " messages, " + logs.user.timeouts + " timeouts, " + (logs.user.bans || 0) + " bans)**\n\n```";
     // reverse iteration for pretty pagination
     for (let i = logs.before.length - 1; i >= 0; --i) {
         let index = logs.before.length - 1 - i;
@@ -147,6 +148,7 @@ function sendLogs(replyto, channel, logs) {
         }
         reply += line;
     }
+    if(logs.before.length == 0) reply += "\nNo recorded chat messages found."
     reply += "\n```";
     if (reply.length > 1900) {
         sendReply(replyto, reply);
@@ -155,6 +157,7 @@ function sendLogs(replyto, channel, logs) {
     if (logs.comments) {
         for (let i = 0; i < logs.comments.length; ++i) {
             let comment = logs.comments[i];
+            if(!comment.text || comment.text.length === 0) continue;
             let line = "Comment by " + comment.author + " (";
             if (comment.added == comment.edited) line += "added";
             else line += "edited";
