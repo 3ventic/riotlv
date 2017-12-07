@@ -123,6 +123,23 @@ function sendLogs(replyto, channel, logs) {
         let message = logs.before[index];
         let ircmsg = parseIrc(message.text);
         let line = "\n[" + formatTimespan(now - message.time) + " ago] " + message.nick + ": " + ircmsg.params[1];
+        console.log("message", message);
+        if(message.modlog) {
+            let modlogs = "";
+            for(let mod in message.modlog) {
+                let action = message.modlog[mod];
+                if(typeof action === "number") {
+                    if(action === -1) action = "unban";
+                    else action = action + "s timeout";
+                }
+                if(action === null) {
+                    action = "ban";
+                }
+                if(modlogs) modlogs += ", ";
+                modlogs += mod + " - " + action;
+            }
+            if(modlogs && modlogs.length > 0) line += " (" + modlogs + ")";
+        }
         if (reply.length + line.length > 1900) {
             reply += "\n```";
             sendReply(replyto, reply);
