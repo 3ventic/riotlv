@@ -12,6 +12,7 @@ var request = Request.defaults({
 });
 
 var tokens = config.lvtokens;
+var pendingSave = false;
 
 const invitelink = 'https://discordapp.com/oauth2/authorize?client_id='
     + config.client_id + '&scope=bot&permissions=0';
@@ -184,6 +185,7 @@ var commands = {
             if (default_channel !== null) {
                 channel_defaults[message.channel.id] = default_channel.toLowerCase();
                 sendReply(message, "default for this channel set to " + channel_defaults[message.channel.id]);
+                pendingSave = true;
             } else {
                 sendReply(message, "usage: !setdefault [channel name]");
             }
@@ -281,6 +283,13 @@ function sendReply(message, reply) {
     });
 }
 
+const saveLoop = setInterval(function() {
+    if (pendingSave) {
+        pendingSave = false;
+        saveDefaults(() => console.log("Saved updated defaults"))
+    }
+}, 1000);
+
 process.on('SIGINT', function () {
     var exit_tasks_done = 0;
     var exit_tasks_total = 2;
@@ -289,18 +298,26 @@ process.on('SIGINT', function () {
             process.exit();
         }
     }
+    clearInterval(saveLoop);
     console.log("Logging out and saving data...");
     client.destroy().then(exitTaskCheck);
     saveDefaults(exitTaskCheck);
 });
 
+var writing = false;
 function saveDefaults(cb) {
-    fs.writeFile(defaults_file, JSON.stringify(channel_defaults), (err) => {
-        if (err) {
-            console.error("Write error", defaults_file);
-        }
-        cb();
-    });
+    if (writing) {
+        setTimeout(saveDefaults, 500, cb);
+    } else {
+        writing = true;
+        fs.writeFile(defaults_file, JSON.stringify(channel_defaults), (err) => {
+            writing = false;
+            if (err) {
+                console.error("Write error", defaults_file);
+            }
+            cb();
+        });
+    }
 }
 
 // Load defaults
